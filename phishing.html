@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Phishing Detector - FraudShield 360</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+      position: relative;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 20% 30%, rgba(155, 93, 229, 0.4), transparent 50%),
+                  radial-gradient(circle at 80% 70%, rgba(0, 245, 255, 0.4), transparent 50%),
+                  radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.3), transparent 50%);
+      filter: blur(50px);
+      z-index: -1;
+      animation: pulse 8s infinite alternate;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(1.05); opacity: 1; }
+    }
+    .gradient-btn {
+      background: linear-gradient(45deg, #C084FC, #06B6D4);
+      transition: all 0.3s ease;
+    }
+    .gradient-btn:hover {
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.8);
+      transform: translateY(-2px);
+    }
+    .card-shadow {
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+      transition: all 0.3s ease;
+      border: 2px solid #06B6D4;
+      border-radius: 1.5rem;
+    }
+    .card-shadow:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 0 25px rgba(6, 182, 212, 0.5);
+      border-color: #EC4899;
+    }
+    .score-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: white;
+      margin: 1rem auto;
+      background: radial-gradient(circle, #1a1a1a 50%, transparent 70%);
+      position: relative;
+    }
+    .score-circle::before {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: -5px;
+      right: -5px;
+      bottom: -5px;
+      border-radius: 50%;
+      border: 5px solid #22C55E;
+    }
+    .score-circle.high::before {
+      border-color: #EF4444;
+    }
+    .score-circle.moderate::before {
+      border-color: #FBBF24;
+    }
+  </style>
+</head>
+<body class="text-white">
+  <div class="container mx-auto px-4 py-12">
+    <a href="homepage.html" class="text-cyan-400 hover:text-cyan-300">← Back to Home</a>
+    <h1 class="text-4xl font-bold text-center mt-6 mb-2">Phishing Detector</h1>
+    <p class="text-center text-gray-300 mb-8">Paste a URL or email text to check for phishing or scam attempts.</p>
+
+    <div class="bg-gray-900 p-8 rounded-3xl card-shadow max-w-3xl mx-auto">
+      <h2 class="text-2xl font-bold mb-6 text-center">Check for Phishing</h2>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div>
+          <textarea id="phishing-input" class="w-full p-4 bg-gray-800 rounded-lg text-gray-300 border border-gray-700 mb-4"
+            rows="6" placeholder="Enter URL or email content here..."></textarea>
+          <button id="check-btn" class="gradient-btn w-full py-3 rounded-lg text-white font-semibold">Check for Fraud</button>
+        </div>
+        <div class="flex flex-col justify-center items-center bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <h3 class="text-lg text-gray-300 mb-2">Suspicious Scam Score</h3>
+          <div id="score-display" class="score-circle mb-2">--</div>
+          <p id="phishing-status" class="text-xl font-bold text-gray-200">Status: --</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-gray-800 py-6 mt-8">
+    <div class="container mx-auto px-4 text-center">
+      <p class="text-base text-gray-300 font-lato italic">FraudShield 360 helps you detect and analyze online fraud in real time. From flagging suspicious transactions to identifying phishing links and visualizing global fraud trends, our AI-powered tools give you actionable insights to stay one step ahead of cyber threats.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById("check-btn").addEventListener("click", () => {
+      const input = document.getElementById("phishing-input").value;
+      fetch("http://127.0.0.1:5000/phishing-check", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ text: input })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const score = data.score;
+        const status = data.status;
+
+        const scoreDisplay = document.getElementById("score-display");
+        scoreDisplay.textContent = `${score}%`;
+        scoreDisplay.classList.remove("high", "moderate");
+
+        if (score >= 80) {
+          scoreDisplay.classList.add("high");
+        } else if (score >= 50) {
+          scoreDisplay.classList.add("moderate");
+        }
+
+        const statusDisplay = document.getElementById("phishing-status");
+        statusDisplay.textContent = `Status: ${status}`;
+        statusDisplay.style.color = status === "Phishing" ? "#ef4444" : "#22c55e";
+      })
+      .catch(error => {
+        alert("Failed to check. Make sure the server is running.");
+        console.error(error);
+      });
+    });
+  </script>
+</body>
+</html>
